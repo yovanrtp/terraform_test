@@ -44,13 +44,34 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
-# 4. Define the EC2 Instance Resource
+# 4. Define the set of EC2 instances to create
+locals {
+  ec2_instances = {
+    web = {
+      instance_type = "t2.micro"
+      role          = "web-server"
+    }
+    app = {
+      instance_type = "t2.micro"
+      role          = "app-server"
+    }
+    cache = {
+      instance_type = "t2.micro"
+      role          = "cache-server"
+    }
+  }
+}
+
+# 5. Create one EC2 instance per entry in the map using for_each
 resource "aws_instance" "web_server" {
+  for_each = local.ec2_instances
+
   ami           = data.aws_ami.amazon_linux.id
-  instance_type = "t2.micro"
+  instance_type = each.value.instance_type
 
   tags = {
-    Name = "Jenkins-Terraform-Lab-EC2"
+    Name = "Jenkins-Terraform-Lab-${each.key}"
+    Role = each.value.role
   }
 }
 
@@ -76,9 +97,9 @@ module "my_lab_bucket" {
 # ----------------- Outputs -----------------
 
 # 6. (Optional) Output values from both the EC2 instance and the S3 module
-output "web_server_public_ip" {
-  description = "The public IP of the EC2 instance."
-  value       = aws_instance.web_server.public_ip
+output "web_server_public_ips" {
+  description = "Public IPs of all EC2 instances, keyed by instance name."
+  value       = { for k, v in aws_instance.web_server : k => v.public_ip }
 }
 
 output "lab_bucket_name" {
