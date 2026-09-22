@@ -1,5 +1,22 @@
-# 1. Define the required provider
+# 1. Define the required provider and configure the S3 backend
 terraform {
+  # This block tells Terraform to store its state file in S3
+  backend "s3" {
+    # --- UPDATE THESE VALUES ---
+    # The name of the S3 bucket you created for storing state.
+    bucket         = "my-jenkins-lab-terraform-state-bucket-98765"
+    
+    # The path and name for the state file in the S3 bucket.
+    key            = "prod/jenkins-lab/terraform.tfstate"
+    
+    # The AWS region where your S3 bucket and DynamoDB table exist.
+    region         = "us-east-1"
+    
+    # The name of the DynamoDB table you created for state locking.
+    dynamodb_table = "my-jenkins-lab-terraform-state-lock"
+    # --- END OF VALUES TO UPDATE ---
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -57,7 +74,6 @@ module "my_lab_bucket" {
 }
 
 # ----------------- Outputs -----------------
-
 
 # 6. (Optional) Output values from both the EC2 instance and the S3 module
 output "web_server_public_ip" {
